@@ -1,0 +1,225 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-heading);
+
+  /* Warm "baby girl on the way" palette — exposed as utilities (bg-cream, text-plum, ...) */
+  --color-cream: var(--cream);
+  --color-blush: var(--blush);
+  --color-sage: var(--sage);
+  --color-plum: var(--plum);
+  --color-gold: var(--gold);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+
+  /* Raw palette */
+  --cream: #fdf7f2;
+  --blush: #efa8a0;
+  --sage: #9db89c;
+  --plum: #3d2b36;
+  --gold: #d9a441;
+
+  --radius: 1.25rem;
+
+  --background: var(--cream);
+  --foreground: var(--plum);
+
+  --card: #fffdfb;
+  --card-foreground: var(--plum);
+  --popover: #fffdfb;
+  --popover-foreground: var(--plum);
+
+  --primary: var(--blush);
+  --primary-foreground: #45222c;
+
+  --secondary: #f6e7df;
+  --secondary-foreground: #5a3f4a;
+
+  --muted: #f4e9e1;
+  --muted-foreground: #6b5560;
+
+  --accent: var(--sage);
+  --accent-foreground: #233322;
+
+  --destructive: #c25a52;
+
+  --border: #ecd9cd;
+  --input: #e7d2c5;
+  --ring: var(--blush);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/40;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Bigger, calmer base type for readability across ages 10–70. */
+    font-size: 1.125rem;
+    line-height: 1.6;
+    background-image:
+      radial-gradient(at 12% 8%, color-mix(in srgb, var(--blush) 11%, transparent) 0px, transparent 45%),
+      radial-gradient(at 88% 4%, color-mix(in srgb, var(--sage) 9%, transparent) 0px, transparent 40%),
+      radial-gradient(circle at center, color-mix(in srgb, var(--blush) 4.5%, transparent) 1.3px, transparent 1.5px);
+    background-size: 100% 100%, 100% 100%, 24px 24px;
+    background-repeat: no-repeat, no-repeat, repeat;
+    background-attachment: fixed;
+  }
+  html {
+    @apply font-sans antialiased;
+  }
+  h1, h2, h3, .font-heading {
+    font-family: var(--font-heading), ui-rounded, "Segoe UI Rounded", system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* --- Small delights ------------------------------------------------------ */
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-120px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.heart-pop {
+  position: absolute;
+  pointer-events: none;
+  animation: float-up 1s ease-out forwards;
+  font-size: 1.1rem;
+  user-select: none;
+}
+
+@keyframes gentle-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: gentle-rise 0.4s ease-out both;
+}
+
+/* Soft, warm "candy" shadow for the sweet cards. */
+.shadow-cute {
+  box-shadow:
+    0 12px 30px -16px color-mix(in srgb, var(--blush) 65%, transparent),
+    0 3px 10px -6px color-mix(in srgb, var(--plum) 14%, transparent);
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+.sparkle {
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  20% {
+    transform: rotate(-7deg);
+  }
+  60% {
+    transform: rotate(7deg);
+  }
+}
+
+.wiggle-hover:hover {
+  animation: wiggle 0.5s ease-in-out;
+}
+
+/* Respect the iOS home-indicator area under the fixed bottom nav. */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Print / "Save as PDF" keepsake (letters export). */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  .letter-page {
+    break-inside: avoid;
+  }
+}
+
+/* Respect people who prefer less motion — keep everything legible, drop the
+   movement (confetti already opts out via its own guard). */
+@media (prefers-reduced-motion: reduce) {
+  .rise-in,
+  .heart-pop {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .animate-pulse,
+  .wiggle-hover:hover {
+    animation: none !important;
+  }
+  .sparkle {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
