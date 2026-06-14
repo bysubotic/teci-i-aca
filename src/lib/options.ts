@@ -37,6 +37,7 @@ export const RESEMBLES_OPTIONS: { value: string; label: string }[] = [
   "Ujka Đole",
   "Baka Dragana",
   "Deda Gagi",
+  "Deda Dejan",
   "Tetka Stela",
 ].map((name) => ({ value: name, label: name }));
 
