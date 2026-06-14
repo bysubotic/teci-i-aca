@@ -107,7 +107,7 @@ export function Gate({ onEnter }: { onEnter: (name: string, avatar: AvatarConfig
                 id="visitor-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="npr. Baka Mira"
+                placeholder="npr. Deda Gagi"
                 maxLength={40}
                 className="h-14 rounded-2xl text-lg"
               />

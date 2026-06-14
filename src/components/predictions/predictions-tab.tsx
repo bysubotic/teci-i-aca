@@ -14,13 +14,14 @@ import {
   resemblesLabel,
 } from "@/lib/format";
 import { decodeAvatar } from "@/lib/avatar";
-import { traitLabel } from "@/lib/options";
+import { HAIR_COLORS, EYE_COLORS, TRAITS, hairHex, eyeHex } from "@/lib/options";
 import { Avatar } from "@/components/avatar";
 import type { Identity } from "@/lib/identity";
 import type { Config, Prediction, Resembles } from "@/lib/types";
 import { usePredictions } from "@/hooks/use-predictions";
 import { PredictionForm } from "./prediction-form";
 import { PredictionCard, type DraftPrediction } from "./prediction-card";
+import { BabyFace } from "./baby-face";
 import { Scoreboard } from "./scoreboard";
 
 function toDraft(p: Prediction): DraftPrediction {
@@ -41,6 +42,11 @@ export function PredictionsTab({ identity, config }: { identity: Identity; confi
   const locked = arePredictionsLocked(config);
   const [editing, setEditing] = useState(false);
 
+  // Everyone always sees everyone's guesses — it's more fun this way. While
+  // voting is open, your own tip is the big card on top, so the gallery below
+  // shows just the others; once locked, the gallery shows all of them.
+  const others = all.filter((p) => p.visitor_id !== identity.id);
+
   if (locked) {
     return (
       <div className="space-y-5">
@@ -48,7 +54,7 @@ export function PredictionsTab({ identity, config }: { identity: Identity; confi
           <Lock className="size-6 shrink-0 text-muted-foreground" />
           <p className="font-semibold text-plum">Tipovanje je zaključano 🔒</p>
         </div>
-        <AllPredictions predictions={all} myVisitorId={identity.id} />
+        <PredictionGallery title="Svi tipovi" predictions={all} myVisitorId={identity.id} />
         <Scoreboard predictions={all} babyActual={babyActual} />
       </div>
     );
@@ -84,54 +90,80 @@ export function PredictionsTab({ identity, config }: { identity: Identity; confi
             : `Do sada ${all.length} ${pluralSr(all.length, ["tip", "tipa", "tipova"])}.`}
         </p>
       )}
+
+      <PredictionGallery title="Ostali tipovi" predictions={others} myVisitorId={identity.id} />
     </div>
   );
 }
 
-function AllPredictions({ predictions, myVisitorId }: { predictions: Prediction[]; myVisitorId: string }) {
-  if (predictions.length === 0) {
-    return (
-      <div className="rounded-3xl border border-dashed border-border bg-card/50 p-8 text-center text-muted-foreground">
-        Niko nije tipovao na vreme. 🤷
-      </div>
-    );
-  }
+// Cute grid of everyone's guesses, each shown as the baby they imagined
+// (hair + eyes recolour the face, the trait sets the expression).
+function PredictionGallery({
+  title,
+  predictions,
+  myVisitorId,
+}: {
+  title: string;
+  predictions: Prediction[];
+  myVisitorId: string;
+}) {
+  if (predictions.length === 0) return null;
 
-  const sorted = [...predictions].sort((a, b) => a.predictor_name.localeCompare(b.predictor_name, "sr"));
+  const sorted = [...predictions].sort((a, b) => {
+    if (a.visitor_id === myVisitorId) return -1;
+    if (b.visitor_id === myVisitorId) return 1;
+    return a.predictor_name.localeCompare(b.predictor_name, "sr");
+  });
 
   return (
     <div className="space-y-3">
-      <h3 className="font-heading text-xl font-semibold text-plum">Svi tipovi</h3>
-      <ul className="space-y-3">
-        {sorted.map((p) => (
-          <li
-            key={p.visitor_id}
-            className={cn(
-              "rounded-3xl border bg-card p-5 shadow-sm",
-              p.visitor_id === myVisitorId ? "border-primary/50 ring-1 ring-primary/20" : "border-border",
-            )}
-          >
-            <div className="flex items-center gap-2.5">
-              <Avatar config={decodeAvatar(p.predictor_avatar)} name={p.predictor_name} size={32} />
-              <p className="font-heading text-lg font-semibold text-plum">
-                {p.predictor_name}
-                {p.visitor_id === myVisitorId && (
-                  <span className="ml-2 text-[0.95rem] font-normal text-muted-foreground">(ti)</span>
-                )}
-              </p>
-            </div>
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
-              <Field label="Datum" value={formatDate(p.birth_date)} />
-              <Field label="Vreme" value={p.birth_time ? formatTime(p.birth_time) : "—"} />
-              <Field label="Težina" value={p.weight_grams ? `${p.weight_grams} g` : "—"} />
-              <Field label="Dužina" value={p.length_cm ? `${p.length_cm} cm` : "—"} />
-              <Field label="Kosa" value={p.hair_color ?? "—"} />
-              <Field label="Oči" value={p.eye_color ?? "—"} />
-              <Field label="Osobina" value={traitLabel(p.temperament)} />
-              <Field label="Liči" value={resemblesLabel(p.resembles)} />
-            </dl>
-          </li>
-        ))}
+      <h3 className="font-heading text-xl font-semibold text-plum">{title}</h3>
+      <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-3">
+        {sorted.map((p) => {
+          const hairDot = HAIR_COLORS.find((c) => c.value === p.hair_color);
+          const eyeDot = EYE_COLORS.find((c) => c.value === p.eye_color);
+          const traitDef = TRAITS.find((t) => t.value === p.temperament);
+          const isMine = p.visitor_id === myVisitorId;
+          return (
+            <li
+              key={p.visitor_id}
+              className={cn(
+                "flex flex-col items-center rounded-3xl border bg-card p-4 shadow-sm",
+                isMine ? "border-primary/50 ring-1 ring-primary/20" : "border-border",
+              )}
+            >
+              <div className="rounded-full bg-secondary/40 p-1 ring-1 ring-gold/25">
+                <span className="block size-20 overflow-hidden rounded-full">
+                  <BabyFace
+                    hairColorHex={hairHex(p.hair_color)}
+                    eyeColorHex={eyeHex(p.eye_color)}
+                    expression={p.temperament ?? ""}
+                    size={80}
+                  />
+                </span>
+              </div>
+
+              <div className="mt-2 flex items-center gap-1.5">
+                <Avatar config={decodeAvatar(p.predictor_avatar)} name={p.predictor_name} size={22} />
+                <p className="font-heading text-base font-semibold text-plum">
+                  {p.predictor_name}
+                  {isMine && <span className="ml-1 text-sm font-normal text-muted-foreground">(ti)</span>}
+                </p>
+              </div>
+
+              <dl className="mt-2 grid w-full grid-cols-2 gap-x-3 gap-y-1.5">
+                <Field label="Datum" value={formatDate(p.birth_date)} />
+                <Field label="Vreme" value={p.birth_time ? formatTime(p.birth_time) : "—"} />
+                <Field label="Težina" value={p.weight_grams ? `${p.weight_grams} g` : "—"} />
+                <Field label="Dužina" value={p.length_cm ? `${p.length_cm} cm` : "—"} />
+                <FieldDot label="Kosa" hex={hairDot?.hex} text={hairDot?.label ?? "—"} />
+                <FieldDot label="Oči" hex={eyeDot?.hex} text={eyeDot?.label ?? "—"} />
+                <Field label="Osobina" value={traitDef ? `${traitDef.emoji} ${traitDef.label}` : "—"} />
+                <Field label="Liči" value={resemblesLabel(p.resembles)} />
+              </dl>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -140,8 +172,20 @@ function AllPredictions({ predictions, myVisitorId }: { predictions: Prediction[
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-[0.9rem] text-muted-foreground">{label}</dt>
+      <dt className="text-[0.8rem] text-muted-foreground">{label}</dt>
       <dd className="font-medium text-plum">{value}</dd>
+    </div>
+  );
+}
+
+function FieldDot({ label, hex, text }: { label: string; hex?: string; text: string }) {
+  return (
+    <div>
+      <dt className="text-[0.8rem] text-muted-foreground">{label}</dt>
+      <dd className="flex items-center gap-1.5 font-medium text-plum">
+        {hex && <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ backgroundColor: `#${hex}` }} />}
+        {text}
+      </dd>
     </div>
   );
 }
